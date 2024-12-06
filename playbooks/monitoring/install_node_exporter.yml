@@ -1,0 +1,62 @@
+---
+- name: Install Node Exporter
+  hosts: all
+  become: true
+  tasks:
+    - name: Ensure required packages are installed
+      apt:
+        name: wget
+        state: present
+
+    - name: Download Node Exporter tarball
+      get_url:
+        url: "https://github.com/prometheus/node_exporter/releases/download/v1.6.1/node_exporter-1.6.1.linux-amd64.tar.gz"
+        dest: /tmp/node_exporter.tar.gz
+
+    - name: Extract Node Exporter
+      unarchive:
+        src: /tmp/node_exporter.tar.gz
+        dest: /tmp/
+        remote_src: yes
+
+    - name: Move Node Exporter binary to /usr/local/bin
+      copy:
+        src: /tmp/node_exporter-1.6.1.linux-amd64/node_exporter
+        dest: /usr/local/bin/node_exporter
+        mode: '0755'
+
+    - name: Create Node Exporter systemd service
+      copy:
+        dest: /etc/systemd/system/node-exporter.service
+        content: |
+          [Unit]
+          Description=Node Exporter
+          Wants=network-online.target
+          After=network-online.target
+
+          [Service]
+          User=nobody
+          ExecStart=/usr/local/bin/node_exporter --web.listen-address="0.0.0.0:9100"
+          Restart=always
+
+          [Install]
+          WantedBy=multi-user.target
+
+    - name: Reload systemd
+      command: systemctl daemon-reload
+
+    - name: Enable and start Node Exporter service
+      systemd:
+        name: node-exporter
+        state: started
+        enabled: yes
+
+    - name: Clean up temporary files
+      file:
+        path: /tmp/node_exporter*
+        state: absent
+
+    - name: Verify Node Exporter is running
+      shell: "curl -sf http://localhost:9100/metrics || exit 1"
+      register: node_exporter_status
+      failed_when: node_exporter_status.rc != 0
