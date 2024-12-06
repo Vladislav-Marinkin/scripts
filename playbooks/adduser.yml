@@ -4,8 +4,8 @@
   gather_facts: false
   vars:
     ansible_user: vlad
-    ansible_ssh_pass: TaMAGocH1
-    ansible_become_pass: TaMAGocH1
+    ansible_ssh_pass: 
+    ansible_become_pass: 
 
   tasks:
 
