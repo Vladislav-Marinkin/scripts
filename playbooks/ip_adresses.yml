@@ -1,0 +1,8 @@
+- hosts: all
+  tasks:
+    - name: Собрать факты
+      setup:
+
+    - name: Вывести IP-адрес
+      debug:
+        var: ansible_default_ipv4.address

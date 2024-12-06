@@ -1,0 +1,37 @@
+#!/bin/bash
+
+# Проверка аргументов командной строки
+if [ "$#" -ne 1 ]; then
+    echo "Использование: $0 group_name"
+    exit 1
+fi
+
+GROUP="$1"
+INVENTORY_FILE="/etc/ansible/hosts"
+KEY_PATH="$HOME/.ssh/id_ecdsa"
+
+# Поиск группы хостов в файле инвентаризации
+HOSTS=$(awk "/^\[$GROUP\]/ {flag=1; next} /^\[/ {flag=0} flag" $INVENTORY_FILE | grep -oP 'ansible_host=\K[^\s]+')
+
+# Проверка наличия ключа SSH
+if [ ! -f "$KEY_PATH" ]; then
+    echo "Создание нового ключа SSH: $KEY_PATH"
+    ssh-keygen -t rsa
+fi
+
+echo $HOSTS
+
+# Создание нового ключа SSH для каждого хоста
+for IP in $HOSTS; do
+    echo "Создание ключа SSH и копирование на $IP"
+    ssh-copy-id vlad@$IP
+
+    # Проверка успешности операции
+    if [ $? -eq 0 ]; then
+        echo "Ключ успешно скопирован на $IP"
+    else
+        echo "Ошибка при копировании ключа на $IP"
+    fi
+done
+
+echo "134231"

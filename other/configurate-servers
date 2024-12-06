@@ -1,0 +1,2 @@
+python3 /usr/local/bin/configurate_servers/run.py "$@"
+

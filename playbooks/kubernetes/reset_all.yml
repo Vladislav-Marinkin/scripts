@@ -1,0 +1,9 @@
+- name: Настройка Kubernetes на мастер нодах
+  hosts: master_servers, worker_servers
+  become: true
+
+  tasks:
+    - name: Сброс состояния кластера Kubernetes
+      command: kubeadm reset --force
+      become: true
+      ignore_errors: true

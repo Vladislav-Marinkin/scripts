@@ -1,0 +1,1 @@
+ansible-playbook adduser.yml -e "username=ansible" --limit dns_servers - создание пользователя на сервере, с созданием папки пользователя 

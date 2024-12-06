@@ -1,0 +1,93 @@
+- name: Настройка Kubernetes на мастер нодах
+  hosts: master_servers
+
+  tasks:
+    - name: Получение IP-адресов мастер нодах
+      set_fact:
+        master_node_ip: "{{ hostvars[item].ansible_host }}"
+      loop: "{{ groups['master_servers'] }}"
+
+    - name: Сброс состояния кластера Kubernetes
+      command: kubeadm reset --force
+      become: true
+      ignore_errors: true
+
+    - name: Удаление директории .kube в домашнем каталоге
+      file:
+        path: "{{ ansible_env.HOME }}/.kube"
+        state: absent
+
+    - name: Инициализация кластера Kubernetes на первой мастер-ноде
+      command: kubeadm init --control-plane-endpoint={{ hostvars[groups['master_servers'][0]].ansible_host }}
+      become: true
+      register: kubeadm_init_output
+      changed_when: "'kubeadm join' in kubeadm_init_output.stdout"
+      when: inventory_hostname == groups['master_servers'][0]
+
+    - name: Создание директории .kube в домашнем каталоге на первой мастер-ноде
+      file:
+        path: "{{ ansible_env.HOME }}/.kube"
+        state: directory
+      when: inventory_hostname == groups['master_servers'][0]
+
+    - name: Копирование файла admin.conf в директорию .kube на первой мастер-ноде
+      shell: |
+        cp -i /etc/kubernetes/admin.conf {{ ansible_env.HOME }}/.kube/config
+        chown {{ ansible_env.USER }}:{{ ansible_env.USER }} {{ ansible_env.HOME }}/.kube/config
+      become: true
+      when: inventory_hostname == groups['master_servers'][0]
+
+    - name: Запуск команды kubectl apply на местер-ноде
+      shell: "kubectl apply -f https://github.com/weaveworks/weave/releases/download/v2.8.1/weave-daemonset-k8s.yaml"
+      when: inventory_hostname == groups['master_servers'][0]
+
+    - name: Ожидание запуска всех подов
+      shell: |
+        until [ $(kubectl get pods --all-namespaces | grep -v 'NAMESPACE' | grep -c 'Running') -eq $(kubectl get pods --all-namespaces | grep -v 'NAMESPACE' | wc -l) ]; do
+          sleep 5
+        done
+      args:
+        executable: /bin/bash
+      when: inventory_hostname == groups['master_servers'][0]
+
+    - name: Получения ключа сертификата
+      shell: kubeadm init phase upload-certs --upload-certs
+      register: output
+      become: true
+      when: inventory_hostname == groups['master_servers'][0]
+
+    - name: Запись ключа в переменную
+      set_fact:
+        cert_key: "{{ output.stdout_lines[-1].split()[-1] }}"
+      when: inventory_hostname == groups['master_servers'][0]
+
+    - name: Запуск команды kubeadm token create --print-join-command
+      shell: kubeadm token create --print-join-command
+      register: output
+      become: true
+      when: inventory_hostname == groups['master_servers'][0]
+
+    - name: Сохранение команды в переменной
+      set_fact:
+        join_command: "{{ output.stdout }}"
+      when: inventory_hostname == groups['master_servers'][0]
+
+    - name: Присоединение остальных мастер-нод
+      shell: "{{ hostvars[groups['master_servers'][0]].join_command }} --certificate-key {{ hostvars[groups['master_servers'][0]].cert_key }} --control-plane"
+      args:
+        executable: /bin/bash
+      become: true
+      when: inventory_hostname != groups['master_servers'][0]
+
+    - name: Создание директории .kube в домашнем каталоге на остальных мастер-нодах
+      file:
+        path: "{{ ansible_env.HOME }}/.kube"
+        state: directory
+      when: inventory_hostname != groups['master_servers'][0]
+
+    - name: Копирование файла admin.conf в директорию .kube на остальных мастер-нодах
+      shell: |
+        cp -i /etc/kubernetes/admin.conf {{ ansible_env.HOME }}/.kube/config
+        chown {{ ansible_env.USER }}:{{ ansible_env.USER }} {{ ansible_env.HOME }}/.kube/config
+      become: true
+      when: inventory_hostname != groups['master_servers'][0]

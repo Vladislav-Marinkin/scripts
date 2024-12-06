@@ -1,0 +1,10 @@
+- hosts: all
+  become: yes
+  tasks:
+    - name: Обновить индекс репозитория
+      apt:
+        update_cache: yes
+
+    - name: Обновить все пакеты
+      apt:
+        upgrade: dist

@@ -1,0 +1,36 @@
+- name: Создание пользователя ansible
+  hosts: all
+  become: yes
+  gather_facts: false
+  vars:
+    ansible_user: vlad
+    ansible_ssh_pass: TaMAGocH1
+    ansible_become_pass: TaMAGocH1
+
+  tasks:
+
+    - name: Имя пользователя
+      debug:
+        msg: "Username is {{ username }}"
+
+    - name: Создание пользователя
+      user:
+        name: "{{ username }}"
+        shell: /bin/bash
+        groups: sudo
+        append: yes
+
+    - name: Копирование публичного ключа на сервер
+      authorized_key:
+        user: "{{ username }}"
+        state: present
+        key: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
+
+    - name: Настройка доступа в visudo
+      lineinfile:
+        dest: /etc/sudoers
+        insertbefore: '%wheel\t@includedir /etc/sudoers.d'
+        line: '{{ username }} ALL=(ALL) NOPASSWD:ALL'
+
+    - name: Проверка конфигурации sudoers
+      command: visudo -cf /etc/sudoers
