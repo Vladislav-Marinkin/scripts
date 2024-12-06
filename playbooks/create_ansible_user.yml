@@ -1,3 +1,4 @@
+---
 - name: Настройка пользователя ansible на сервере
   hosts: all
 #  remote_user: vlad

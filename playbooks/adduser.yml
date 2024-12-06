@@ -1,3 +1,4 @@
+---
 - name: Создание пользователя ansible
   hosts: all
   become: yes

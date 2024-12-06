@@ -1,3 +1,4 @@
+---
 - name: Установка Kubernetes на Ubuntu Server 22.04 LTS
   hosts: master_servers, worker_servers
   become: true

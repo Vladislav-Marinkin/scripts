@@ -1,3 +1,4 @@
+---
 - name: Настройка Kubernetes на мастер нодах
   hosts: master_servers
 

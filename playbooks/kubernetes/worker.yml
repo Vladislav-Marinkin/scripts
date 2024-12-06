@@ -1,3 +1,4 @@
+---
 - name: Настройка Kubernetes на рабочих-нодах
   hosts: worker_servers, master_servers
 
