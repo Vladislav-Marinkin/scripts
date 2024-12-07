@@ -1,7 +1,7 @@
-#ansible-playbook install_docker.yml --extra-vars "docker_users=['user1','user2']" --limit kafka_servers
+п»ї#ansible-playbook install_docker.yml --extra-vars "docker_users=['user1','user2']" --limit kafka_servers
 
 --- 
-- name: Установка Docker и Docker Compose
+- name: РЈСЃС‚Р°РЅРѕРІРєР° Docker Рё Docker Compose
   hosts: all
   become: true
   vars:
@@ -10,11 +10,11 @@
       - user2
 
   tasks:
-    - name: Обновление кеша пакетов
+    - name: РћР±РЅРѕРІР»РµРЅРёРµ РєРµС€Р° РїР°РєРµС‚РѕРІ
       apt:
         update_cache: yes
 
-    - name: Установка необходимых зависимостей
+    - name: РЈСЃС‚Р°РЅРѕРІРєР° РЅРµРѕР±С…РѕРґРёРјС‹С… Р·Р°РІРёСЃРёРјРѕСЃС‚РµР№
       apt:
         name: 
           - apt-transport-https
@@ -23,17 +23,17 @@
           - software-properties-common
         state: present
 
-    - name: Добавление официального GPG ключа Docker
+    - name: Р”РѕР±Р°РІР»РµРЅРёРµ РѕС„РёС†РёР°Р»СЊРЅРѕРіРѕ GPG РєР»СЋС‡Р° Docker
       apt_key:
         url: https://download.docker.com/linux/ubuntu/gpg
         state: present
 
-    - name: Добавление Docker репозитория
+    - name: Р”РѕР±Р°РІР»РµРЅРёРµ Docker СЂРµРїРѕР·РёС‚РѕСЂРёСЏ
       apt_repository:
         repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable
         state: present
 
-    - name: Установка Docker
+    - name: РЈСЃС‚Р°РЅРѕРІРєР° Docker
       apt:
         name: 
           - docker-ce
@@ -41,24 +41,24 @@
           - containerd.io
         state: present
 
-    - name: Убедиться, что Docker запущен
+    - name: РЈР±РµРґРёС‚СЊСЃСЏ, С‡С‚Рѕ Docker Р·Р°РїСѓС‰РµРЅ
       service:
         name: docker
         state: started
         enabled: true
 
-    - name: Установка Docker Compose
+    - name: РЈСЃС‚Р°РЅРѕРІРєР° Docker Compose
       get_url:
         url: https://github.com/docker/compose/releases/download/v2.21.0/docker-compose-`uname -s`-`uname -m`
         dest: /usr/local/bin/docker-compose
         mode: '0755'
 
-    - name: Проверка установки Docker Compose
+    - name: РџСЂРѕРІРµСЂРєР° СѓСЃС‚Р°РЅРѕРІРєРё Docker Compose
       shell: docker-compose --version
       register: docker_compose_version
       failed_when: docker_compose_version.rc != 0
 
-    - name: Добавление пользователей в группу docker
+    - name: Р”РѕР±Р°РІР»РµРЅРёРµ РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№ РІ РіСЂСѓРїРїСѓ docker
       user:
         name: "{{ item }}"
         groups: docker
