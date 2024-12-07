@@ -1,6 +1,6 @@
 ﻿#ansible-playbook install_docker.yml --extra-vars "docker_users=['user1','user2']" --limit kafka_servers
 
---- 
+---
 - name: Установка Docker и Docker Compose
   hosts: all
   become: true
@@ -16,7 +16,7 @@
 
     - name: Установка необходимых зависимостей
       apt:
-        name: 
+        name:
           - apt-transport-https
           - ca-certificates
           - curl
@@ -35,7 +35,7 @@
 
     - name: Установка Docker
       apt:
-        name: 
+        name:
           - docker-ce
           - docker-ce-cli
           - containerd.io
@@ -48,8 +48,10 @@
         enabled: true
 
     - name: Установка Docker Compose
+      vars:
+        docker_compose_url: "https://github.com/docker/compose/releases/download/v2.21.0/docker-compose-{{ ansible_system | lower }}-{{ ansible_architecture }}"
       get_url:
-        url: https://github.com/docker/compose/releases/download/v2.21.0/docker-compose-`uname -s`-`uname -m`
+        url: "{{ docker_compose_url }}"
         dest: /usr/local/bin/docker-compose
         mode: '0755'
 
