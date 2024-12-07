@@ -1,0 +1,66 @@
+#ansible-playbook install_docker.yml --extra-vars "docker_users=['user1','user2']" --limit kafka_servers
+
+--- 
+- name: Установка Docker и Docker Compose
+  hosts: all
+  become: true
+  vars:
+    docker_users:
+      - user1
+      - user2
+
+  tasks:
+    - name: Обновление кеша пакетов
+      apt:
+        update_cache: yes
+
+    - name: Установка необходимых зависимостей
+      apt:
+        name: 
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - software-properties-common
+        state: present
+
+    - name: Добавление официального GPG ключа Docker
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Добавление Docker репозитория
+      apt_repository:
+        repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable
+        state: present
+
+    - name: Установка Docker
+      apt:
+        name: 
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+        state: present
+
+    - name: Убедиться, что Docker запущен
+      service:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Установка Docker Compose
+      get_url:
+        url: https://github.com/docker/compose/releases/download/v2.21.0/docker-compose-`uname -s`-`uname -m`
+        dest: /usr/local/bin/docker-compose
+        mode: '0755'
+
+    - name: Проверка установки Docker Compose
+      shell: docker-compose --version
+      register: docker_compose_version
+      failed_when: docker_compose_version.rc != 0
+
+    - name: Добавление пользователей в группу docker
+      user:
+        name: "{{ item }}"
+        groups: docker
+        append: yes
+      loop: "{{ docker_users }}"
