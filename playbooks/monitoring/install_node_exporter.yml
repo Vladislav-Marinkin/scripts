@@ -39,6 +39,9 @@
           ExecStart=/usr/local/bin/node_exporter --web.listen-address="0.0.0.0:9100"
           Restart=always
 
+          StandardOutput=append:/var/log/node-exporter.log
+          StandardError=append:/var/log/node-exporter.log
+
           [Install]
           WantedBy=multi-user.target
 
